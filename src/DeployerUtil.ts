@@ -1,5 +1,6 @@
 import {PushToken, StorageV1, ValidatorV1} from "../typechain-types";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
+import { PROTOCOL_VERSION, VALIDATOR_CONTRACT_PARAMS, STORAGE_CONTRACT_PARAMS } from "./constants";
 
 let log = console.log;
 
@@ -25,19 +26,20 @@ export namespace DeployerUtil {
     log('deploying ValidatorV1');
     const validatorV1Factory = await hre.ethers.getContractFactory("ValidatorV1",
       {libraries: {SigUtil: suLibrary.address}});
-    const protocolVersion = 1;
-    const valPerBlockTarget = 5;
-    const nodeRandomMinCount = 1;
-    const nodeRandomPingCount = 1;
-    const REPORTS_BEFORE_SLASH_V = 2; // 10 for prod
-    const REPORTS_BEFORE_SLASH_S = 2; // 50 for prod
-    const SLASHES_BEFORE_BAN_V = 2;
-    const SLASHES_BEFORE_BAN_S = 2;
-    const SLASH_PERCENT = 10;
-    const BAN_PERCENT = 10;
+    const { 
+      valPerBlockTarget, 
+      nodeRandomMinCount, 
+      nodeRandomPingCount, 
+      REPORTS_BEFORE_SLASH_V, 
+      REPORTS_BEFORE_SLASH_S, 
+      SLASHES_BEFORE_BAN_V, 
+      SLASHES_BEFORE_BAN_S, 
+      SLASH_PERCENT, 
+      BAN_PERCENT
+    } = VALIDATOR_CONTRACT_PARAMS;
 
     const validatorV1Proxy = await upgrades.deployProxy(validatorV1Factory,
-      [protocolVersion, pushCt, valPerBlockTarget, nodeRandomMinCount, nodeRandomPingCount,
+      [PROTOCOL_VERSION, pushCt, valPerBlockTarget, nodeRandomMinCount, nodeRandomPingCount,
         REPORTS_BEFORE_SLASH_V, REPORTS_BEFORE_SLASH_S, SLASHES_BEFORE_BAN_V, SLASHES_BEFORE_BAN_S,
         SLASH_PERCENT, BAN_PERCENT],
       {
@@ -65,11 +67,10 @@ export namespace DeployerUtil {
 
   export async function deployStorageContract(hre: HardhatRuntimeEnvironment, valCt: string): Promise<StorageV1> {
     log('deploying StorageV1')
-    let protocolVersion = 1;
-    let rfTarget = 5;
+    const { rfTarget } = STORAGE_CONTRACT_PARAMS;
     const factory = await hre.ethers.getContractFactory("StorageV1");
     const proxyCt = await upgrades.deployProxy(factory,
-      [protocolVersion, valCt, rfTarget],
+      [PROTOCOL_VERSION, valCt, rfTarget],
       {kind: "uups"});
     await proxyCt.deployed();
     log(`deployed proxy: ${proxyCt.address}`);
@@ -77,6 +78,16 @@ export namespace DeployerUtil {
     log(`deployed impl: ${implCt}`);
     log('done');
     return proxyCt;
+  }
+
+  export async function updateStorageContract(hre: HardhatRuntimeEnvironment, storageProxyCt: string) {
+    const ethers = hre.ethers;
+    const [owner] = await hre.ethers.getSigners();
+    log(`owner is ${owner.address}`);
+    log(`proxy is ${storageProxyCt}`);
+    const storageV1Factory = await ethers.getContractFactory("StorageV1");
+    const abi = await upgrades.upgradeProxy(storageProxyCt, storageV1Factory, {kind: 'uups'});
+    log(`updated proxy at address: ${abi.address}`);
   }
 }
 
