@@ -27,13 +27,15 @@ const config: HardhatUserConfig = {
             gas: 30000000
         },
         sepolia : {
-            url: process.env.SEPOLIA_TEST_RPC_URL,
-            accounts: [process.env.SEPOLIA_TEST_PRIVATE_KEY]
+            url: process.env.SEPOLIA_RPC_URL,
+            accounts: [process.env.SEPOLIA_PRIVATE_KEY]
         },
     },
 
     etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY
+        apiKey: {
+            sepolia: process.env.SEPOLIA_ETHERSCAN_API_KEY
+        }
     }
 };
 
