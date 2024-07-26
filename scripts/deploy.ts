@@ -72,21 +72,7 @@ async function deployValidator() {
   const validatorV1Impl = await upgrades.erc1967.getImplementationAddress(validatorV1Proxy.address);
 
   if (network !== 'localhost') {
-    await verifyContract(validatorV1Proxy.address, [
-      PROTOCOL_VERSION, pushTokenAddr, valPerBlockTarget,
-      nodeRandomMinCount, nodeRandomPingCount,
-      REPORTS_BEFORE_SLASH_V, REPORTS_BEFORE_SLASH_S,
-      SLASHES_BEFORE_BAN_V, SLASHES_BEFORE_BAN_S,
-      SLASH_PERCENT, BAN_PERCENT
-    ]);
-
-    await verifyContract(validatorV1Impl, [
-      PROTOCOL_VERSION, pushTokenAddr, valPerBlockTarget,
-      nodeRandomMinCount, nodeRandomPingCount,
-      REPORTS_BEFORE_SLASH_V, REPORTS_BEFORE_SLASH_S,
-      SLASHES_BEFORE_BAN_V, SLASHES_BEFORE_BAN_S,
-      SLASH_PERCENT, BAN_PERCENT
-    ]);
+    await verifyContract(validatorV1Impl, []);
   }
 
   info('done');
@@ -108,12 +94,7 @@ async function deployStorage() {
 
   // Verify the StorageV1 contract
   if (network !== 'localhost') {
-    await verifyContract(storageProxy.address, [
-      PROTOCOL_VERSION, validatorAddress, rfTarget
-    ]);
-    await verifyContract(storageImpl, [
-      PROTOCOL_VERSION, validatorAddress, rfTarget
-    ]);
+    await verifyContract(storageImpl, []);
   }
 }
 
@@ -156,7 +137,7 @@ async function deployAll() {
 async function verifyContract(address: string, args: any[]) {
   console.log(`Verifying contract at address: ${address}`);
   try {
-    await run("verify:verify", {
+    await hre.run("verify:verify", {
       address: address,
       constructorArguments: args
     });

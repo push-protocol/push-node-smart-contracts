@@ -3,7 +3,6 @@
 import {HardhatUserConfig, task} from "hardhat/config";
 
 require('@openzeppelin/hardhat-upgrades');
-require('@nomiclabs/hardhat-etherscan')
 import "@nomicfoundation/hardhat-toolbox";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
