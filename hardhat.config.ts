@@ -3,7 +3,6 @@
 import {HardhatUserConfig, task} from "hardhat/config";
 
 require('@openzeppelin/hardhat-upgrades');
-require('@nomiclabs/hardhat-etherscan')
 import "@nomicfoundation/hardhat-toolbox";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -27,13 +26,15 @@ const config: HardhatUserConfig = {
             gas: 30000000
         },
         sepolia : {
-            url: process.env.SEPOLIA_TEST_RPC_URL,
-            accounts: [process.env.SEPOLIA_TEST_PRIVATE_KEY]
+            url: process.env.SEPOLIA_RPC_URL,
+            accounts: [process.env.SEPOLIA_PRIVATE_KEY]
         },
     },
 
     etherscan: {
-        apiKey: process.env.ETHERSCAN_API_KEY
+        apiKey: {
+            sepolia: process.env.SEPOLIA_ETHERSCAN_API_KEY
+        }
     }
 };
 
