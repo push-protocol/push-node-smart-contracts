@@ -1,12 +1,59 @@
-# Validator contract
+# Push Node Smart Contracts
 
-## 1 How to run tests (uses embedded EVM, it resets for every test case)
-all tests
+## Getting Started
+
+### 🖥 Installation
+
+1. Clone the push-node-smart-contracts repository:
+```sh
+git clone https://github.com/ethereum-push-notification-service/push-node-smart-contracts
+```
+
+2. Change to the project directory:
+```sh
+cd push-node-smart-contracts
+```
+
+3. Install the dependencies:
+```sh
+npm install
+```
+
+---
+
+### 🧩 Deployment Instructions
+
+#### Deploy on local network
+**1. To deploy all contracts on Hardhat local environment, run:**
+```bash 
+bash sh/deploy.sh -n localhost -f deployAll
+```
+
+**2. To deploy a specific contract, use:**
+```bash 
+bash sh/deploy.sh -n localhost -f deployPushToken
+```
+
+#### Deploy on Sepolia
+**1. To deploy all contracts on Sepolia network, run:**
+```bash 
+bash sh/deploy.sh -n sepolia -f deployAll
+```
+
+**2. To deploy a specific contract, use:**
+```bash 
+bash sh/deploy.sh -n sepolia -f deployPushToken
+```
+
+---
+
+### 🧪 Running Tests (uses embedded EVM, it resets for every test case)
+#### all tests
 ```shell
 npx hardhat test
 ```
 
-Storage.sol tests
+#### Storage.sol tests
 ```shell
 # for normal tests
 npx hardhat test --grep StorageTestAutoRf
@@ -15,7 +62,7 @@ npx hardhat test --grep StorageTestNoAutoRf
 StorageTestBig=true npx hardhat test --grep StorageTestBig
 ```
 
-## 2 How to set up the local env
+## Local Development
 
 Run an empty local hardhat EVM as a DEDICATED SEPARATE PROCESS
 ```shell
