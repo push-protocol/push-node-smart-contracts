@@ -1,12 +1,14 @@
 import hre, { ethers, upgrades, run } from "hardhat";
 import { config as loadEnvVariables } from "dotenv";
-import { DeployerUtil } from "../src/DeployerUtil";
+import {DeployerUtil, NodeType} from "../src/DeployerUtil";
 import { VALIDATOR_CONTRACT_PARAMS, PROTOCOL_VERSION, STORAGE_CONTRACT_PARAMS } from "../src/constants";
+import {RegisterUtil} from "../src/RegisterUtil";
 
 const functionName = process.env.FUNCTION_NAME;
 const network = process.env.NETWORK;
 
 let info = console.log;
+let log = console.log;
 
 function loadNetworkEnv() {
   loadEnvVariables();
@@ -134,6 +136,59 @@ async function deployAll() {
   await deployStorage();
 }
 
+// FOR DOCKER:
+// FULL LOCALHOST DEPLOY , called from init.sh from the container internals
+async function deployAllLocalhost() {
+
+  // deploy fake token & mint for owner
+  const [owner] = await hre.ethers.getSigners();
+  log(`owner is ${owner.address}`);
+
+  const pushToken = await DeployerUtil.deployPushTokenFake(hre);
+  log(`=> FakePushToken.sol deployed at ${pushToken.address}`);
+
+  const mintAmount = "100000";
+  const amount = ethers.utils.parseEther(mintAmount);
+  await pushToken.mint(owner.address, amount);
+  let finalBalance = await pushToken.balanceOf(owner.address);
+  log("owner balance is " + finalBalance);
+
+  // deploy Validator.sol
+  let validatorCt = await DeployerUtil.deployValidatorContract(hre, pushToken.address);
+  log(`=> Validator.sol deployed at ${validatorCt.address}`);
+
+  // deploy Storage.sol
+  let storageCt = await DeployerUtil.deployStorageContract(hre, validatorCt.address);
+  await validatorCt.setStorageContract(storageCt.address);
+  log(`=> Storage.sol deployed at ${storageCt.address}`);
+
+
+  // register validators
+  await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
+    "8e12de12c35eabf35b56b04e53c4e468e46727e8", 101, "http://localhost:4001", NodeType.VNode);
+
+  await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
+    "fdaeaf7afcfbb4e4d16dc66bd2039fd6004cfce8", 102, "http://localhost:4002", NodeType.VNode);
+
+  await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
+    "98f9d910aef9b3b9a45137af1ca7675ed90a5355", 103, "http://localhost:4003", NodeType.VNode);
+
+  // register storage nodes
+  await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
+    "3563C89b05e4dcD0edEeE0F3e93e396C128C06E2", 251, "http://localhost:3001", NodeType.SNode);
+
+  await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
+    "b4d6fd1c0df9e3f427a1a8f8a8ec122396206ff7", 252, "http://localhost:3002", NodeType.SNode);
+
+  log('success');
+
+  info(`=> showing validator nodes registered in ${validatorCt.address}`);
+  info(await validatorCt.getVNodes());
+  info(`=> showing storage nodes registered in ${validatorCt.address}`);
+  info(await validatorCt.storageContract());
+
+}
+
 async function verifyContract(address: string, args: any[]) {
   console.log(`Verifying contract at address: ${address}`);
   try {
@@ -165,6 +220,9 @@ async function main() {
       break;
     case 'deployAll':
       await deployAll();
+      break;
+    case 'deployAllLocalhost':
+      await deployAllLocalhost();
       break;
     default:
       console.error("Invalid function name provided:", functionName);
