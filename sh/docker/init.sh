@@ -12,8 +12,7 @@ npx wait-on http://127.0.0.1:8545
 
 echo "RUNNING DEPLOY"
 export FUNCTION_NAME=deployAllLocalhost
-npx hardhat run scripts/deploy.ts
-
+npx hardhat run --network localhost scripts/deploy.ts
 
 # The hardhat node process never completes
 # Waiting prevents the container from pausing
