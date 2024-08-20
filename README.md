@@ -23,6 +23,20 @@ npm install
 
 ### 🧩 Deployment Instructions
 
+#### Deploy on local network (new version: uses docker)
+
+You will get a docker image with HardHat
+with deployed contracts: PushToken(mock), Validator.sol, Storage.sol
+with deployed nodes: v1,v2,v3,s1,s2
+
+```bash
+docker build . -t hardhat
+docker run -it -d -p 8545:8545 --name hardhat hardhat
+docker logs --follow hardhat
+# TO REMOVE: 
+docker rm -f hardhat
+```
+
 #### Deploy on local network
 **1. To deploy all contracts on Hardhat local environment, run:**
 ```bash 

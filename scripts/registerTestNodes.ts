@@ -1,6 +1,8 @@
 import {ethers} from "hardhat";
 import {config as loadEnvVariables} from "dotenv";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {DeployerUtil} from "../src/DeployerUtil";
+import {RegisterUtil} from "../src/RegisterUtil";
 
 let info = console.log;
 
@@ -8,7 +10,7 @@ let info = console.log;
 
 async function main() {
     loadEnvVariables();
-
+    info("starting");
     const [owner, node1, node2, node3] = await ethers.getSigners();
     const pushAddr = process.env.VALIDATOR_PUSH_TOKEN_ADDRESS ?? process.exit(1);
     const validatorAddr = process.env.VALIDATOR_CONTRACT_ADDRESS ?? process.exit(1);
@@ -18,6 +20,8 @@ async function main() {
     await registerNode(pushAddr, validatorAddr, owner,  node1.address,100,  "http://localhost:4001");
     await registerNode(pushAddr, validatorAddr, owner, node2.address,200,  "http://localhost:4002");
     await registerNode(pushAddr, validatorAddr, owner, node3.address, 300, "http://localhost:4003");
+
+    RegisterUtil.registerNode()
 }
 
 main().catch((error) => {
