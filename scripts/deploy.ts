@@ -165,20 +165,20 @@ async function deployAllLocalhost() {
 
   // register validators
   await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
-    "8e12de12c35eabf35b56b04e53c4e468e46727e8", 101, "http://vnode1:4001", NodeType.VNode);
+    "8e12de12c35eabf35b56b04e53c4e468e46727e8", 101, "http://vnode1.local:4001", NodeType.VNode);
 
   await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
-    "fdaeaf7afcfbb4e4d16dc66bd2039fd6004cfce8", 102, "http://vnode2:4001", NodeType.VNode);
+    "fdaeaf7afcfbb4e4d16dc66bd2039fd6004cfce8", 102, "http://vnode2.local:4002", NodeType.VNode);
 
   await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
-    "98f9d910aef9b3b9a45137af1ca7675ed90a5355", 103, "http://vnode3:4001", NodeType.VNode);
+    "98f9d910aef9b3b9a45137af1ca7675ed90a5355", 103, "http://vnode3.local:4003", NodeType.VNode);
 
   // register storage nodes
   await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
-    "3563C89b05e4dcD0edEeE0F3e93e396C128C06E2", 251, "http://snode1:3001", NodeType.SNode);
+    "3563C89b05e4dcD0edEeE0F3e93e396C128C06E2", 251, "http://snode1.local:3001", NodeType.SNode);
 
   await RegisterUtil.registerNode(hre, pushToken.address, validatorCt.address, owner,
-    "b4d6fd1c0df9e3f427a1a8f8a8ec122396206ff7", 252, "http://snode2:3001", NodeType.SNode);
+    "b4d6fd1c0df9e3f427a1a8f8a8ec122396206ff7", 252, "http://snode2.local:3002", NodeType.SNode);
 
   log('success');
 
