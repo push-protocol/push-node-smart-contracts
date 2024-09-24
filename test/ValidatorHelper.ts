@@ -101,3 +101,28 @@ export class VoteDataS {
       [2, vt.blockId, vt.targetNode, vt.skey]);
   }
 }
+
+export class VoteDataA {
+  // the vote action, right now it is 1
+  cmd: number;
+  // the block where vote should be placed
+  blockId: string;
+  // the node wallet, we do a complaint about
+  targetNode: string;
+  // storage key for k-v for storage node
+  akey:string;
+
+
+  constructor(cmd: number, blockId: string, targetNode: string, akey:string) {
+    this.cmd = cmd;
+    this.blockId = blockId;
+    this.targetNode = targetNode;
+    this.akey = akey;
+  }
+
+  public static encode(vt: VoteDataA): string {
+    let abi = ethers.utils.defaultAbiCoder;
+    return abi.encode(["uint8", "uint128", "address", "uint128"],
+      [3, vt.blockId, vt.targetNode, vt.akey]);
+  }
+}
