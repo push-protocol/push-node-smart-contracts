@@ -65,9 +65,8 @@ async function state1(): Promise<DeployInfo> {
   const [owner, otherAccount, thirdAccount] = await ethers.getSigners();
 
   let protocolVersion = 1;
-  let validatorContract = '0x' + '0'.repeat(40);
   let rfTarget = 5;
-  let storageCt = await DeployerUtil.deployStorageContract(hre, validatorContract);
+  let storageCt = await DeployerUtil.deployStorageContract(hre, null);
 
 
   // const storageCtFactory = await ethers.getContractFactory("StorageV1");

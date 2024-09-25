@@ -1,7 +1,7 @@
 import hre, { ethers, upgrades, run } from "hardhat";
 import { config as loadEnvVariables } from "dotenv";
 import {DeployerUtil, NodeType} from "../src/DeployerUtil";
-import { STORAGE_CONTRACT_PARAMS } from "../src/constants";
+import { VALIDATOR_CONTRACT_PARAMS, PROTOCOL_VERSION, STORAGE_CONTRACT_PARAMS } from "../src/constants";
 import {RegisterUtil} from "../src/RegisterUtil";
 
 const functionName = process.env.FUNCTION_NAME;
@@ -49,16 +49,16 @@ async function deployPushToken() {
 
 async function deployValidator() {
   const env = loadNetworkEnv();
-  
+
   const pushTokenAddr = env.PUSH_TOKEN_ADDRESS;
-  info(pushTokenAddr);
+  info(`PUSH_TOKEN_ADDRESS=${pushTokenAddr}`);
   if (!pushTokenAddr) {
     console.error("PUSH_TOKEN_ADDRESS is not set in the environment variables");
     process.exit(1);
   }
 
   const validatorV1Proxy = await DeployerUtil.deployValidatorContract(hre, pushTokenAddr);
-
+  log(`>>> VALIDATOR_CONTRACT_ADDRESS=${validatorV1Proxy.address}`);
   const validatorV1Impl = await upgrades.erc1967.getImplementationAddress(validatorV1Proxy.address);
 
   if (network !== 'localhost') {
@@ -81,7 +81,7 @@ async function deployStorage() {
   const storageProxy = await DeployerUtil.deployStorageContract(hre, validatorAddress);
   const storageImpl = await upgrades.erc1967.getImplementationAddress(storageProxy.address);
   const { rfTarget } = STORAGE_CONTRACT_PARAMS;
-
+  log(`>>> STORAGE_CONTRACT_ADDRESS=${storageProxy.address}`);
   // Verify the StorageV1 contract
   if (network !== 'localhost') {
     await verifyContract(storageImpl, []);
@@ -116,11 +116,18 @@ async function upgradeStorage() {
 
 async function deployAll() {
   const pushTokenAddress = await deployPushToken();
+  log(`>>> VALIDATOR_PUSH_TOKEN_ADDRESS=${pushTokenAddress}`);
   process.env[network.toUpperCase() + '_PUSH_TOKEN_ADDRESS'] = pushTokenAddress;
   
   const validatorAddress = await deployValidator();
   process.env[network.toUpperCase() + '_VALIDATOR_CONTRACT_ADDRESS'] = validatorAddress;
-  
+  await deployStorage();
+}
+
+async function deployAllNoToken() {
+  const validatorAddress = await deployValidator();
+  process.env[network.toUpperCase() + '_VALIDATOR_CONTRACT_ADDRESS'] = validatorAddress;
+
   await deployStorage();
 }
 
@@ -208,6 +215,9 @@ async function main() {
       break;
     case 'deployAll':
       await deployAll();
+      break;
+    case 'deployAllNoToken':
+      await deployAllNoToken();
       break;
     case 'deployAllLocalhost':
       await deployAllLocalhost();
