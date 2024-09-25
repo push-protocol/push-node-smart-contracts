@@ -1,7 +1,7 @@
 import hre, { ethers, upgrades, run } from "hardhat";
 import { config as loadEnvVariables } from "dotenv";
 import {DeployerUtil, NodeType} from "../src/DeployerUtil";
-import { VALIDATOR_CONTRACT_PARAMS, PROTOCOL_VERSION, STORAGE_CONTRACT_PARAMS } from "../src/constants";
+import { STORAGE_CONTRACT_PARAMS } from "../src/constants";
 import {RegisterUtil} from "../src/RegisterUtil";
 
 const functionName = process.env.FUNCTION_NAME;
@@ -58,18 +58,6 @@ async function deployValidator() {
   }
 
   const validatorV1Proxy = await DeployerUtil.deployValidatorContract(hre, pushTokenAddr);
-
-  const { 
-    valPerBlockTarget, 
-    nodeRandomMinCount, 
-    nodeRandomPingCount, 
-    REPORTS_BEFORE_SLASH_V, 
-    REPORTS_BEFORE_SLASH_S, 
-    SLASHES_BEFORE_BAN_V, 
-    SLASHES_BEFORE_BAN_S, 
-    SLASH_PERCENT, 
-    BAN_PERCENT
-  } = VALIDATOR_CONTRACT_PARAMS;
 
   const validatorV1Impl = await upgrades.erc1967.getImplementationAddress(validatorV1Proxy.address);
 
