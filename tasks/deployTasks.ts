@@ -54,9 +54,4 @@ task("v:deployStorageCt", "deploys validatorCt and registers it into validator c
     log('deploying storage contract')
     const storeCt = await DeployerUtil.deployStorageContract(hre, valCtAddr);
     log(`deployed`);
-
-    log(`registering storage contract ${storeCt.address} into validator at ${valCtAddr}`)
-    const valCt = await ethers.getContractAt("ValidatorV1", valCtAddr, owner);
-    await valCt.setStorageContract(storeCt.address);
-    log(`validatorContract successfully registered new address: `, await valCt.storageContract());
   });

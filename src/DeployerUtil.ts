@@ -65,17 +65,25 @@ export namespace DeployerUtil {
     log(`updated proxy at address: ${abi.address}`);
   }
 
-  export async function deployStorageContract(hre: HardhatRuntimeEnvironment, valCt: string): Promise<StorageV1> {
+  export async function deployStorageContract(hre: HardhatRuntimeEnvironment, valCtAddr: string): Promise<StorageV1> {
     log('deploying StorageV1')
     const { rfTarget } = STORAGE_CONTRACT_PARAMS;
     const factory = await hre.ethers.getContractFactory("StorageV1");
     const proxyCt = await upgrades.deployProxy(factory,
-      [PROTOCOL_VERSION, valCt, rfTarget],
+      [PROTOCOL_VERSION, valCtAddr, rfTarget],
       {kind: "uups"});
     await proxyCt.deployed();
     log(`deployed proxy: ${proxyCt.address}`);
     let implCt = await upgrades.erc1967.getImplementationAddress(proxyCt.address);
     log(`deployed impl: ${implCt}`);
+
+    let storeCt = proxyCt;
+    const [owner] = await hre.ethers.getSigners();
+    log(`registering storage contract ${storeCt.address} into validator at ${valCtAddr}`)
+    const valCt = await ethers.getContractAt("ValidatorV1", valCtAddr, owner);
+    await valCt.setStorageContract(storeCt.address);
+    log(`validatorContract successfully registered new address: `, await valCt.storageContract());
+
     log('done');
     return proxyCt;
   }
