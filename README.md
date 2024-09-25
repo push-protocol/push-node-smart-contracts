@@ -83,7 +83,13 @@ npx hardhat verify --network sepolia $STORAGE_CT
 edit .env
 SEPOLIA_RPC_URL
 SEPOLIA_PRIVATE_KEY
-SEPOLIA_PUSH_TOKEN_ADDRESS
+ 
+declare env vars in the shell
+```shell
+export PUSH_CT=# PUT TOKEN HERE
+export VAL_CT= # PUT PROXY HERE
+export STORAGE_CT= # PUT PROXY HERE
+```
 
 #### to get sepolia eth (if needed)
 https://www.alchemy.com/faucets/ethereum-sepolia
