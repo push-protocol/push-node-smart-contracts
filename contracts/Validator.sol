@@ -10,7 +10,7 @@ import "./SigUtil.sol";
 /*
 Validator smart contract
 
-# Enables a network of Validator (V), Storage (S), Delivery (D) nodes
+# Enables a network of Validator (V), Storage (S), Archival (A) nodes
 - V performs a multi-sig on a message block within a specified group
     stakes tokens;
     Lifecycle: new - reported - slashed - banned
@@ -22,11 +22,10 @@ and show that inbox to the UI.
     stakes tokens ;
     Lifecycle: new - reported - slashed - banned (TBD)
 
-
-- D unpacks message block (a threshold amount of sigs required),
-and for every single message: delivers it to the end-users
-    stakes tokens
-    Lifecycle: none (TBD)
+- A unpacks message block (a threshold amount of sigs required),
+and indexes every single message
+    stakes tokens ;
+    Lifecycle: new - reported - slashed - banned
 
 
 # Contracts
@@ -47,20 +46,21 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
     uint256 public minStakeV;
     // number of push tokens (18 digits) to stake as Storage (S)
     uint256 public minStakeS;
-    // number of push tokens (18 digits) to stake as Delivery (D)
-    uint256 public minStakeD;
+    // number of push tokens (18 digits) to stake as Archival (A)
+    uint256 public minStakeA;
 
     /* validator slashing params  (effectively constant)
 
     report = bad behaviour,
     we accept a VoteData signed by this amout of nodes: REPORT_THRESHOLD_PER_BLOCK
-    we perform a slash after this amount of reports: REPORTS_BEFORE_SLASH_V|S
+    we perform a slash after this amount of reports: REPORTS_BEFORE_SLASH_V|S|A 
 
     A slash reward is distributed among all the nodes which submitted the reports.
     */
     uint16 public REPORT_THRESHOLD_PER_BLOCK;  // i.e. 66 = 66% = 2/3
     uint16 public REPORTS_BEFORE_SLASH_V;
     uint16 public REPORTS_BEFORE_SLASH_S;
+    uint16 public REPORTS_BEFORE_SLASH_A;
 
     /*
     slash = reduces node collateral for SLASH_PERCENT %
@@ -73,6 +73,7 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
     uint16 public SLASH_PERCENT;
     uint16 public SLASHES_BEFORE_BAN_V;
     uint16 public SLASHES_BEFORE_BAN_S;
+    uint16 public SLASHES_BEFORE_BAN_A;
 
     uint16 public BAN_PERCENT;
 
@@ -120,7 +121,7 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
     // vnode colleciton; banned/unstaked nodes are removed
     address[] public snodes;
     // vnode colleciton; banned/unstaked nodes are removed
-    address[] public dnodes;
+    address[] public anodes;
     // node details
     mapping(address => NodeInfo) public nodeMap;
 
@@ -147,7 +148,7 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         address ownerWallet;
         // node eth wallet, which is used mostly for private key signatures for node communication
         address nodeWallet;
-        // node type; currently we support only 3 types (V,S,D)
+        // node type; currently we support only 3 types (V,S,A)
         NodeType nodeType;
         // 'staked' PUSH tokens for this node (18 digits)
         uint256 nodeTokens;
@@ -161,7 +162,7 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
     }
 
     struct NodeCounters {
-        // S, V nodes -----
+        // S, V , A nodes -----
 
         // how many times this node was reported
         // cleaned on SLASH
@@ -178,9 +179,9 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         // cleaned on SLASH, BAN, unstake
         address[] reportedBy;
 
-        // S nodes -------
+        // S & A nodes -------
 
-        // keys missing (for storage nodes only)
+        // keys missing (for storage and archival nodes only)
         // we prevent new reports that match any existing key in this list
         uint128[] reportedKeys;
     }
@@ -201,13 +202,14 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
     enum VoteAction {
         None,    // 0
         ReportV, // 1
-        ReportS  // 2
+        ReportS, // 2
+        ReportA  // 3
     }
 
     enum NodeType {
         VNode, // validator 0
         SNode, // storage 1
-        DNode  // delivery 2
+        ANode  // archival 2
     }
 
     struct VoteMessage {
@@ -233,12 +235,13 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         uint16 nodeRandomMinCount_,
         uint16 nodeRandomPingCount_,
         uint16 REPORTS_BEFORE_SLASH_V_,
-        uint16 REPORTS_BEFORE_SLASH_S_,
+        uint16 REPORTS_BEFORE_SLASH_S_A,
         uint16 SLASHES_BEFORE_BAN_V_,
-        uint16 SLASHES_BEFORE_BAN_S_,
+        uint16 SLASHES_BEFORE_BAN_S_A,
         uint16 SLASH_PERCENT_,
         uint16 BAN_PERCENT_
     ) initializer public {
+        
         // init libraries
         __UUPSUpgradeable_init();
         __Ownable_init_unchained();
@@ -255,12 +258,16 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
 
         minStakeV = 100;
         minStakeS = 100;
-        minStakeD = 100;
+        minStakeA = 100;
         REPORTS_BEFORE_SLASH_V = REPORTS_BEFORE_SLASH_V_;
-        REPORTS_BEFORE_SLASH_S = REPORTS_BEFORE_SLASH_S_;
+        REPORTS_BEFORE_SLASH_S = REPORTS_BEFORE_SLASH_S_A;
+        // Same as Snode ( Done deliberately since solidity does not allow more params in a fn)
+        REPORTS_BEFORE_SLASH_A = REPORTS_BEFORE_SLASH_S_A;
         SLASH_PERCENT = SLASH_PERCENT_;
         SLASHES_BEFORE_BAN_V = SLASHES_BEFORE_BAN_V_;
-        SLASHES_BEFORE_BAN_S = SLASHES_BEFORE_BAN_S_;
+        SLASHES_BEFORE_BAN_S = SLASHES_BEFORE_BAN_S_A;
+        // Same as Snode ( Done deliberately since solidity does not allow more params in a fn)
+        SLASHES_BEFORE_BAN_A = SLASHES_BEFORE_BAN_S_A;
         BAN_PERCENT = BAN_PERCENT_;
 
 
@@ -356,7 +363,7 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
     // ----------------------------- NODE PUBLIC FUNCTIONS  --------------------------------------------------
 
     /*
-    Registers a new V, S, D node
+    Registers a new V, S, A node
     Locks PUSH tokens (nodeTokens_) with $_collateral amount.
     A node will run from a nodeWallet_
     ACCESS: Anyone can call this (dApp frontend functiton)
@@ -377,9 +384,9 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         } else if (nodeType_ == NodeType.SNode) {
             require(nodeTokens_ >= minStakeS, "Insufficient collateral for SNODE");
             snodes.push(nodeWallet_);
-        } else if (nodeType_ == NodeType.DNode) {
-            require(nodeTokens_ >= minStakeD, "Insufficient collateral for DNODE");
-            dnodes.push(nodeWallet_);
+        } else if (nodeType_ == NodeType.ANode) {
+            require(nodeTokens_ >= minStakeA, "Insufficient collateral for ANODE");
+            anodes.push(nodeWallet_);
         } else {
             revert("unsupported nodeType ");
         }
@@ -529,6 +536,19 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
             require(targetNode_.nodeType == NodeType.SNode, "report only for SNodes");
             _reportSNode(VoteAction(cmd_), reporterNode_, uniqVoters_, targetNode_, blockId_, skey_);
         }
+        else if (targetNodeType_ == NodeType.ANode) {
+            uint8 cmd_;
+            uint128 blockId_;
+            address targetNodeAddr_;
+            uint128 akey_;
+            (cmd_, blockId_, targetNodeAddr_, akey_) = abi.decode(voteBlob_, (uint8, uint128, address, uint128));
+
+            require(cmd_ == uint8(VoteAction.ReportA), 'report action only supported');
+            NodeInfo storage targetNode_ = nodeMap[targetNodeAddr_];
+            require(targetNode_.nodeWallet != address(0), "target node wallet does not exists");
+            require(targetNode_.nodeType == NodeType.ANode, "report only for ANodes");
+            _reportANode(VoteAction(cmd_), reporterNode_, uniqVoters_, targetNode_, blockId_, akey_);
+        }
 
     }
 
@@ -572,12 +592,12 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         return snodes;
     }
 
-    function getDNodesLength() public view returns (uint) {
-        return dnodes.length;
+    function getANodesLength() public view returns (uint) {
+        return anodes.length;
     }
 
-    function getDNodes() public view returns (address[] memory) {
-        return dnodes;
+    function getANodes() public view returns (address[] memory) {
+        return anodes;
     }
 
     // ----------------------------- IMPL  --------------------------------------------------
@@ -626,6 +646,29 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
             slash(reporterNode, targetNode);
         }
         if (targetNode.counters.slashCounter >= SLASHES_BEFORE_BAN_S) {
+            ban(targetNode);
+        }
+        return 0;
+    }
+
+    function _reportANode(VoteAction voteAction_, NodeInfo storage reporterNode, address[] memory uniqVoters_,
+        NodeInfo storage targetNode, uint128 blockId_, uint128 archivalKey_) private returns (uint8) {
+        require(targetNode.nodeType == NodeType.ANode, "report only for ANodes");
+        if (uniqVoters_.length < valPerBlock * REPORT_THRESHOLD_PER_BLOCK / 100) {
+            revert('sig count is too low');
+        }
+        NodeStatus ns_ = targetNode.status;
+        if (ns_ == NodeStatus.Unstaked || ns_ == NodeStatus.BannedAndUnstaked) {
+            // this is a terminal state
+            return 0;
+        }
+
+        reportIfNew(voteAction_, reporterNode, targetNode, uniqVoters_, blockId_, archivalKey_);
+
+        if (targetNode.counters.reportCounter >= REPORTS_BEFORE_SLASH_A) {
+            slash(reporterNode, targetNode);
+        }
+        if (targetNode.counters.slashCounter >= SLASHES_BEFORE_BAN_A) {
             ban(targetNode);
         }
         return 0;
@@ -682,6 +725,12 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
             delete targetNode.counters.reportedKeys;
             findAndRemove(snodes, targetNode.nodeWallet);
         }
+        else if (targetNode.nodeType == NodeType.ANode) {
+            delete targetNode.counters.reportedInBlocks;
+            delete targetNode.counters.reportedBy;
+            delete targetNode.counters.reportedKeys;
+            findAndRemove(anodes, targetNode.nodeWallet);
+        }
         return delta_;
     }
 
@@ -700,7 +749,7 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         NodeInfo storage targetNode,
         address[] memory newVoters_,
         uint128 blockId_,
-        uint128 storageKey_
+        uint128 key_
     ) private {
         // check that we encounter this report X this block only for the first time
         uint128[] memory reportedInBlocks_ = targetNode.counters.reportedInBlocks;
@@ -712,15 +761,26 @@ contract ValidatorV1 is Ownable2StepUpgradeable, UUPSUpgradeable {
         }
 
         if (targetNode.nodeType == NodeType.SNode) {
-            require(storageKey_ != 0, 'storage key is required');
+            require(key_ != 0, 'storage key is required');
             uint128[] memory reportedKeys_ = targetNode.counters.reportedKeys;
             uint rkLen_ = reportedKeys_.length;
             for (uint i = 0; i < rkLen_; i++) {
-                if (storageKey_ == reportedKeys_[i]) {
+                if (key_ == reportedKeys_[i]) {
                     revert('storage key is not new');
                 }
             }
-            targetNode.counters.reportedKeys.push(storageKey_);
+            targetNode.counters.reportedKeys.push(key_);
+        }
+        else if (targetNode.nodeType == NodeType.ANode) {
+            require(key_ != 0, 'archival key is required');
+            uint128[] memory reportedKeys_ = targetNode.counters.reportedKeys;
+            uint rkLen_ = reportedKeys_.length;
+            for (uint i = 0; i < rkLen_; i++) {
+                if (key_ == reportedKeys_[i]) {
+                    revert('archival key is not new');
+                }
+            }
+            targetNode.counters.reportedKeys.push(key_);
         }
 
 

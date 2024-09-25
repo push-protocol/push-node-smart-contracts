@@ -31,16 +31,16 @@ export namespace DeployerUtil {
       nodeRandomMinCount, 
       nodeRandomPingCount, 
       REPORTS_BEFORE_SLASH_V, 
-      REPORTS_BEFORE_SLASH_S, 
+      REPORTS_BEFORE_SLASH_S_A, 
       SLASHES_BEFORE_BAN_V, 
-      SLASHES_BEFORE_BAN_S, 
+      SLASHES_BEFORE_BAN_S_A, 
       SLASH_PERCENT, 
       BAN_PERCENT
     } = VALIDATOR_CONTRACT_PARAMS;
 
     const validatorV1Proxy = await upgrades.deployProxy(validatorV1Factory,
       [PROTOCOL_VERSION, pushCt, valPerBlockTarget, nodeRandomMinCount, nodeRandomPingCount,
-        REPORTS_BEFORE_SLASH_V, REPORTS_BEFORE_SLASH_S, SLASHES_BEFORE_BAN_V, SLASHES_BEFORE_BAN_S,
+        REPORTS_BEFORE_SLASH_V, REPORTS_BEFORE_SLASH_S_A, SLASHES_BEFORE_BAN_V, SLASHES_BEFORE_BAN_S_A,
         SLASH_PERCENT, BAN_PERCENT],
       {
         kind: "uups",
@@ -102,5 +102,5 @@ export namespace DeployerUtil {
 export enum NodeType {
   VNode = 0, // validator 0
   SNode = 1, // storage 1
-  DNode = 2 // delivery 2
+  ANode = 2 // anode 2
 }
