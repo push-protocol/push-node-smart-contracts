@@ -87,11 +87,23 @@ task("push:balanceOf", "prints account balance @ PUSH token")
       await printBalance(hre, pushCt, args.address);
   });
 
-
-task("v:listNodes", "shows validator nodes registered")
+task("v:listActive", "shows validator nodes registered")
   .setAction(async (args, hre) => {
     let {validatorProxyCt, pushCt} = getConfig(hre);
     const validator = await hre.ethers.getContractAt("ValidatorV1", validatorProxyCt)
+
+    let activeVs = await validator.getActiveVNodes();
+    for (let i = 0; i < activeVs.length; i++){
+      const activeV = activeVs[i];
+      info("active validator # %d :%o", i, removeIndexedProperties(activeV));
+    }
+  });
+
+task("listNodes", "shows validator nodes registered")
+  .setAction(async (args, hre) => {
+    let {validatorProxyCt, pushCt} = getConfig(hre);
+    const validator = await hre.ethers.getContractAt("ValidatorV1", validatorProxyCt)
+
 
     info(`registered storage contract is`);
     info(await validator.storageContract())
@@ -229,4 +241,15 @@ function getConfig(hre: HardhatRuntimeEnvironment): { storageProxyCt: string; va
   info(`validatorProxyCt is ${validatorProxyCt}`);
   info(`pushCt is ${pushCt}`);
   return {validatorProxyCt, pushCt, storageProxyCt};
+}
+
+function removeIndexedProperties<T extends object>(obj: T): Partial<T> {
+  const result = {} as Partial<T>;
+  for (const key of Object.keys(obj)) {
+    // Check if the key is not a numeric index
+    if (isNaN(Number(key))) {
+      result[key as keyof T] = obj[key];
+    }
+  }
+  return result;
 }
