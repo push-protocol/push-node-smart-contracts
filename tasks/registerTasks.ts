@@ -85,8 +85,12 @@ task("v:listNodes", "shows validator nodes registered")
     const validator = await hre.ethers.getContractAt("ValidatorV1", args.validatorProxyCt);
     info(`showing validator nodes registered in ${args.validatorProxyCt}`);
     info(await validator.getVNodes());
-    info(`showing storage nodes registered in ${args.validatorProxyCt}`);
-    info(await validator.getSNodes());
+    info(`showing storage nodes registered in ${args.validatorProxyCt} ..`);
+    let sNodeList = await validator.getSNodes();
+    info(sNodeList);
+    for (const snodeAddr of sNodeList) {
+      info("storage node info: %o", await validator.getNodeInfo(snodeAddr));
+    }
     info(`showing archival nodes registered in ${args.validatorProxyCt}`);
     info(await validator.getANodes());
     info(`registered storage contract is`);
