@@ -27,7 +27,12 @@ export class RegisterUtil {
         let tx2 = await validatorCt.connect(nodeOwner).registerNodeAndStake(amount, nodeType,
             nodeUrl, nodeAddr);
         await tx2.wait();
-        let res = await validatorCt.getNodeInfo(nodeAddr);
-        info("getNodeInfo:", res);
+        let ni = await validatorCt.getNodeInfo(nodeAddr);
+        info(`nodeWallet: ${ni.nodeWallet}, 
+                 OwnerWallet: ${ni.ownerWallet}, 
+                 nodeType: ${ni.nodeType},
+                 nodeTokens:  ${ni.nodeTokens},
+                 nodeApiBaseUrl: ${ni.nodeApiBaseUrl},
+                 status:  ${ni.status}`);
     }
 }
