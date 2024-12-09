@@ -15,17 +15,21 @@ const NETWORK_SEPOLIA = 'sepolia';
 
 /*
 
+
 Generate node keys (node_key.json) for every validator from 1 to 15:
->npx hardhat --network localhost generateNodeKeys "../push-vnode/docker/_local" "test" "v" "15"
+>npx hardhat --network localhost generateNodeKeys "../push-vnode/docker" "test" "v" "15"
 
 Generate console commands to register these keys in a smart contract:
 (you should execute them manually because sometimes evm operations fail or timeout)
->npx hardhat --network localhost generateRegisterScript "../push-vnode/docker/_local" "v"
+>npx hardhat --network localhost generateRegisterScript "../push-vnode/docker" "v"
 
 Generates .yml file (see push-vnode/docker/v.yml) for all node keys found:
 (re-writes v.yml! , provide file param if needed)
->npx hardhat --network localhost generateYml "../push-vnode/docker/_local" "v"
+>npx hardhat --network localhost generateYml "../push-vnode/docker" "v"
 
+NOTE: ../push-vnode/docker = could be changed to any dir,
+existing .json keys would be kept,
+.yml files will be overwritten
 
 
  */
