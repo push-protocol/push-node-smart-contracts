@@ -44,3 +44,4 @@ export default config;
 import "./tasks/deployTasks"
 import "./tasks/keyTasks"
 import "./tasks/registerTasks"
+import "./tasks/batchRegisterTasks"
