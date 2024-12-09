@@ -9,7 +9,7 @@ import type {BigNumber} from "ethers";
 import {ValidatorV1} from "../typechain-types";
 
 let info = console.log;
-EnvLoader.loadEnvOrFail();
+EnvLoader.loadEnv();
 
 /*
 ex:
@@ -163,73 +163,6 @@ async function printBalance(hre: HardhatRuntimeEnvironment, pushCt: string, bala
   const push = await hre.ethers.getContractAt("IERC20", pushCt);
   info(`checking balance of ${balanceAddr} in IERC20 ${pushCt}`);
   info(await push.balanceOf(balanceAddr));
-}
-
-task("generateRegisterScript", "")
-  .setAction(async (args, hre) => {
-      await processDirectories("/Users/w/chain/push-vnode/docker")
-  });
-
-// Function to process directories and generate commands
-async function processDirectories(dir: string): Promise<void> {
-    // Regular expression to match "a" + number, "v" + number, "s" + number
-    const dirPattern = /^[avs](\d+)$/;
-
-    // Read the input directory
-    const subDirs = fs.readdirSync(dir).filter((subDir) => {
-        const fullPath = path.join(dir, subDir);
-        return fs.statSync(fullPath).isDirectory() && dirPattern.test(subDir);
-    });
-
-    for (const subDir of subDirs) {
-        const match = dirPattern.exec(subDir);
-        if (!match) continue;
-
-        const dirLetter = subDir[0]; // "a", "v", or "s"
-        const dirNumber = parseInt(match[1], 10); // Extract number
-        const fullPath = path.join(dir, subDir);
-        const jsonFilePath = path.join(fullPath, "node_key.json");
-
-        // Check if the JSON file exists
-        if (!fs.existsSync(jsonFilePath)) {
-            console.warn(`JSON file not found: ${jsonFilePath}`);
-            continue;
-        }
-
-        // Read and parse the JSON file
-        const jsonData = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
-        const address = jsonData.address;
-
-        if (!address) {
-            console.warn(`Address not found in file: ${jsonFilePath}`);
-            continue;
-        }
-
-        // Generate dynamic values
-        let basePort: number;
-        let baseStake: number;
-        let cmd:string;
-        if (dirLetter === "v") {
-            baseStake = 100;
-            basePort = 4000;
-            cmd = "registerValidator";
-        } else if (dirLetter === "s") {
-            baseStake = 200;
-            basePort = 3000;
-            cmd = "registerStorage";
-        } else if (dirLetter === "a") {
-            baseStake = 300;
-            basePort = 5000;
-            cmd = "registerArchival";
-        } else {
-            throw new Error();
-        }
-        const calculatedPort = basePort + dirNumber;
-        const line = `npx hardhat --network sepolia v:${cmd} ${address} "https://${dirLetter}${dirLetter}${dirNumber}.dev.push.org" ${baseStake + dirNumber}`;
-
-        // Print the generated command
-        console.log(line);
-    }
 }
 
 
